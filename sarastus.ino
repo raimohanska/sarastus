@@ -47,7 +47,7 @@ void loop() {
   
   if ((!zero) && millis() > nextStep) {
     if (countToStart > 0) {
-      setBrightness(min);
+      setBrightness(0);
       countdown();
     } else if (brightness < max) {
       brighten();
@@ -84,7 +84,7 @@ void longPressUp() {
 void longPressHold() {
   if (zero && brightness > 0) {
     if (brightness == max) {
-      setNightBrightness(1);
+      setNightBrightness(16);
     } else {
       setNightBrightness(brightness+1);
     }
@@ -124,7 +124,8 @@ void countUp() {
 
 void setBrightness(int b) {
   brightness = b;
-  analogWrite(ledPin, brightness);
+  int b2 = (b * b) / max;
+  analogWrite(ledPin, b2);
 }
 
 void countdown() {
