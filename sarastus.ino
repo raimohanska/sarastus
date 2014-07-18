@@ -4,6 +4,7 @@ int buttonPin = 2;
 int brightness = 0;
 int min = 0;
 int max = 255;
+int nightBrightness = max / 10;
 int maxCount = 8;
 int indicatorPins[] = {3,4,5,6,7,8,9,10};
 int countToStart = 0;
@@ -31,11 +32,15 @@ void loop() {
       if (!isLongPress && (millis() > buttonDownTime + resetMs)) {
         longPress();
         isLongPress = true;
-      }      
+      } else if (isLongPress) {
+        longPressHold();
+      }
       delay(10);
     }
     if (!isLongPress) {
       shortPress();
+    } else {
+      longPressUp();
     }
     delay(10);
   }
@@ -67,15 +72,33 @@ void shortPress() {
 void longPress() {
   if (!zero) {
     reset();
-  } else {
+  } else if (brightness == 0) {
     zero = false;
     countUp();      
   }
 }
 
+void longPressUp() {
+}
+
+void longPressHold() {
+  if (zero && brightness > 0) {
+    if (brightness == max) {
+      setNightBrightness(1);
+    } else {
+      setNightBrightness(brightness+1);
+    }
+  }
+}
+
+void setNightBrightness(int b) {
+  nightBrightness = b;
+  setBrightness(b);
+}
+
 void showDimLights() {
   showCountdown(0);
-  setBrightness(max / 10);
+  setBrightness(nightBrightness);
 }
 
 void reset() {
