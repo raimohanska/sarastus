@@ -1,3 +1,4 @@
+int debugMode = false;
 int ledPin = 11;
 int buttonPin = 2;
 int brightness = 0;
@@ -5,13 +6,12 @@ int min = 0;
 int max = 255;
 int maxCount = 7;
 int indicatorPins[] = {3,4,5,6,7,8,9};
-int countToStart = maxCount;
-int countStepMs = 1000; // 1 second
-int riseTimeMs = 60000; // 1 minute
-int riseStepMs = 1000;
-int resetMs = 1000;
+int countToStart = 0;
+unsigned long countStepMs = debugMode ? 1000 : 60000;
+unsigned long riseStepMs = debugMode ? 1000 : 6000;
+unsigned long resetMs = 1000;
 unsigned long nextStep = 0;
-int zero = false;
+int zero = true;
 
 void setup() {
   pinMode(buttonPin, INPUT);
@@ -29,20 +29,17 @@ void loop() {
     int isLongPress = false;
     while(digitalRead(buttonPin) == LOW) {
       if (!isLongPress && (millis() > buttonDownTime + resetMs)) {
-        longPressDetected();
+        longPress();
         isLongPress = true;
       }      
       delay(10);
     }
-    if (isLongPress) {
-      longPress();
-    } else {
+    if (!isLongPress) {
       shortPress();
     }
     delay(10);
   }
   
-  showCountdown(countToStart);
   if ((!zero) && millis() > nextStep) {
     if (countToStart > 0) {
       setBrightness(min);
@@ -53,13 +50,14 @@ void loop() {
   }
 }
 
-void longPressDetected() {
-  showCountdown(maxCount);
-}
-
 void shortPress() {
-  if (brightness == 0) {
-    zero = false;
+  if (zero) {
+    if (brightness == 0) {
+      showDimLights();
+    } else {
+      setBrightness(0);
+    }
+  } else if (brightness == 0) {
     countUp();
   } else {
     longPress();
@@ -67,13 +65,27 @@ void shortPress() {
 }
 
 void longPress() {
+  if (!zero) {
+    reset();
+  } else {
+    zero = false;
+    countUp();      
+  }
+}
+
+void showDimLights() {
+  showCountdown(0);
+  setBrightness(max / 10);
+}
+
+void reset() {
   zero = true;  
   showCountdown(0);
   setBrightness(0);
-  countToStart = 0;
 }
 
 void showCountdown(int count) {
+  countToStart = count;
   for (int i = 0; i < maxCount; i++) {
     digitalWrite(indicatorPins[i], (count > i) ? HIGH : LOW);
   }
@@ -82,11 +94,10 @@ void showCountdown(int count) {
 void countUp() {
   setBrightness(0);
   if (countToStart <= maxCount) {
-    countToStart++;
+    showCountdown(countToStart+1);
   }
   scheduleCountdown();
 }
-
 
 void setBrightness(int b) {
   brightness = b;
@@ -94,7 +105,7 @@ void setBrightness(int b) {
 }
 
 void countdown() {
-  countToStart--;
+  showCountdown(countToStart-1);
   scheduleCountdown();
 }
 
