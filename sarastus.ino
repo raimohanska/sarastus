@@ -10,10 +10,12 @@ int nightBrightness = max / 10;
 int maxCount = 8;
 int indicatorPins[] = {3,4,5,6,7,8,9,10};
 int countToStart = 0;
-unsigned long countStepMs = debugMode ? 60000 : 3600000;
+int settingTimer = false;
+unsigned long countStepMs = debugMode ? 10000 : 3600000;
 unsigned long riseStepMs = debugMode ? 1000 : 6000;
 unsigned long resetMs = 1000;
 unsigned long nextStep = 0;
+unsigned long previousPress = 0;
 int zero = true;
 
 void setup() {
@@ -23,16 +25,15 @@ void setup() {
   for (int i = 0; i < maxCount; i++) {
     pinMode(indicatorPins[i], OUTPUT);
   }
-  scheduleCountdown();
 }
 
 void loop() {  
   int buttonPressed = (digitalRead(buttonPin) == LOW);
   if (buttonPressed) { 
-    unsigned long buttonDownTime = millis();
+    previousPress = millis();
     int isLongPress = false;
     while(digitalRead(buttonPin) == LOW) {
-      if (!isLongPress && (millis() > buttonDownTime + resetMs)) {
+      if (!isLongPress && (millis() > previousPress + resetMs)) {
         longPress();
         isLongPress = true;
       } else if (isLongPress) {
@@ -46,11 +47,13 @@ void loop() {
       longPressUp();
     }
     delay(10);
+  } else if ((previousPress > 0) && (millis() - previousPress > 5000)) {
+    previousPress = 0;
+    beenAWhileSinceButtonPressed();
   }
   
   if ((!zero) && millis() > nextStep) {
     if (countToStart > 0) {
-      setBrightness(0);
       countdown();
     } else if (brightness < max) {
       brighten();
@@ -59,16 +62,16 @@ void loop() {
 }
 
 void shortPress() {
-  if (zero) {
+  if (settingTimer) {
+    countUp();
+  } else if (zero || (countToStart > 0)) { // normal operation, also during timer
     if (brightness == 0) {
       showDimLights();
     } else {
       setBrightness(0);
     }
-  } else if (brightness == 0) {
-    countUp();
-  } else {
-    longPress();
+  } else { // brightening
+    reset();
   }
 }
 
@@ -77,6 +80,7 @@ void longPress() {
     reset();
   } else if (brightness == 0) {
     zero = false;
+    settingTimer = true;
     countUp();      
   }
 }
@@ -94,18 +98,22 @@ void longPressHold() {
   }
 }
 
+void beenAWhileSinceButtonPressed() {
+  settingTimer = false;
+}
+
 void setNightBrightness(int b) {
   nightBrightness = b;
   setBrightness(b);
 }
 
 void showDimLights() {
-  showCountdown(0);
   setBrightness(nightBrightness);
 }
 
 void reset() {
-  zero = true;  
+  zero = true;
+  settingTimer = false; 
   showCountdown(0);
   setBrightness(0);
 }
@@ -118,6 +126,7 @@ void showCountdown(int count) {
 }
 
 void countUp() {
+  zero = false;
   setBrightness(0);
   if (countToStart <= maxCount) {
     showCountdown(countToStart+1);
