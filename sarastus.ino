@@ -1,14 +1,16 @@
 int debugMode = false;
+int beepPin = 13;
 int ledPin = 11;
 int buttonPin = 2;
 int brightness = 0;
 int min = 0;
+int minVisible = 16;
 int max = 255;
 int nightBrightness = max / 10;
 int maxCount = 8;
 int indicatorPins[] = {3,4,5,6,7,8,9,10};
 int countToStart = 0;
-unsigned long countStepMs = debugMode ? 1000 : 3600000;
+unsigned long countStepMs = debugMode ? 60000 : 3600000;
 unsigned long riseStepMs = debugMode ? 1000 : 6000;
 unsigned long resetMs = 1000;
 unsigned long nextStep = 0;
@@ -16,6 +18,7 @@ int zero = true;
 
 void setup() {
   pinMode(buttonPin, INPUT);
+  pinMode(beepPin, OUTPUT);
   pinMode(ledPin, OUTPUT);
   for (int i = 0; i < maxCount; i++) {
     pinMode(indicatorPins[i], OUTPUT);
@@ -84,7 +87,7 @@ void longPressUp() {
 void longPressHold() {
   if (zero && brightness > 0) {
     if (brightness == max) {
-      setNightBrightness(16);
+      setNightBrightness(minVisible);
     } else {
       setNightBrightness(brightness+1);
     }
@@ -130,7 +133,12 @@ void setBrightness(int b) {
 
 void countdown() {
   showCountdown(countToStart-1);
-  scheduleCountdown();
+  if (debugMode) {
+    beep();
+  }
+  if (countToStart > 0) {
+    scheduleCountdown();
+  }
 }
 
 void scheduleCountdown() {
@@ -138,6 +146,15 @@ void scheduleCountdown() {
 }
 
 void brighten() {
-  setBrightness(brightness + 1);
+  setBrightness((brightness >= minVisible) ? (brightness + 1) : (minVisible));
   nextStep = millis() + riseStepMs;
+}
+
+void beep() {
+  for (int i = 0; i < 100; i++) {
+    digitalWrite(beepPin, HIGH);
+    delay(1);
+    digitalWrite(beepPin, LOW);
+    delay(1);  
+  }
 }
