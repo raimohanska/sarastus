@@ -72,7 +72,7 @@ void shortPress() {
     if (brightness == 0) {
       showDimLights();
     } else {
-      setBrightness(0);
+      fadeBrightness(0);
     }
   } else { // brightening
     reset();
@@ -113,7 +113,7 @@ void setNightBrightness(int b) {
 }
 
 void showDimLights() {
-  setBrightness(nightBrightness);
+  fadeBrightness(nightBrightness);
 }
 
 void reset() {
@@ -146,6 +146,20 @@ void countUp() {
     showCountdown(countToStart+1);
   }
   scheduleCountdown();
+}
+
+void fadeBrightness(int target) {
+  int start = max(brightness, minVisible);
+  int fadeTime = 500;
+  int fadeSteps = abs(target - start);
+  int fadeDelay = fadeTime / fadeSteps;
+  int fadeStep = (target - start) / fadeSteps;
+  
+  for (int i = 0; i < fadeSteps; i++) {
+    setBrightness(map(i, 0, fadeSteps - 1, start, target));
+    delay(fadeDelay);
+  }
+  setBrightness(target);
 }
 
 void setBrightness(int b) {
