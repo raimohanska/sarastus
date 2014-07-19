@@ -59,6 +59,10 @@ void loop() {
       brighten();
     }
   }
+  
+  if (settingTimer) {
+    blinkLeds();
+  }
 }
 
 void shortPress() {
@@ -100,6 +104,7 @@ void longPressHold() {
 
 void beenAWhileSinceButtonPressed() {
   settingTimer = false;
+  showCountdown(countToStart);
 }
 
 void setNightBrightness(int b) {
@@ -123,6 +128,15 @@ void showCountdown(int count) {
   for (int i = 0; i < maxCount; i++) {
     digitalWrite(indicatorPins[i], (count > i) ? HIGH : LOW);
   }
+}
+
+void blinkLeds() {
+  int on = ((millis() / 500) % 2 == 0);
+  
+  for (int i = 0; i < maxCount; i++) {
+    digitalWrite(indicatorPins[i], ((i == countToStart -1) ? on : (countToStart > i)) ? HIGH : LOW);
+  }
+
 }
 
 void countUp() {
