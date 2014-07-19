@@ -131,7 +131,7 @@ void showCountdown(int count) {
 }
 
 void blinkLeds() {
-  int on = ((millis() / 500) % 2 == 0);
+  int on = ((millis() / 500) % 3 > 0);
   
   for (int i = 0; i < maxCount; i++) {
     digitalWrite(indicatorPins[i], ((i == countToStart -1) ? on : (countToStart > i)) ? HIGH : LOW);
