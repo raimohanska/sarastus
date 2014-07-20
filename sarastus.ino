@@ -16,6 +16,7 @@ int nightBrightness = max / 10;
 // timing state
 const int maxCount = 8;
 int countToStart = 0;
+unsigned long wakeUpTime = 0;
 const unsigned long countStepMs = debugMode ? 1000 : 3600000;
 const unsigned long riseStepMs = debugMode ? 1000 : 6000;
 const unsigned long resetMs = 1000;
@@ -75,8 +76,9 @@ void checkButtonState() {
 void advanceAppState() {
   switch (state) {
     case COUNTING_DOWN:
-      if (millis() > nextStep) {
-        countdown();
+      if (millis() >= wakeUpTime) {
+        state = BRIGHTENING;
+        wakeUpTime += (countStepMs * 24);
       }
       break;
     case BRIGHTENING:
@@ -95,7 +97,8 @@ void shortPress() {
       countUp();
       break;
     case BRIGHTENING:
-      reset();
+      fadeBrightness(0);
+      state = COUNTING_DOWN;
       break;
     default:
       if (brightness == 0) {
@@ -108,46 +111,49 @@ void shortPress() {
 }
 
 void longPress() {
-  switch (state) {
-    case ZERO:
-      if (brightness == 0) {
+  if (brightness > 0) {
+     // setting brightness
+  } else {
+    switch (state) {
+      case COUNTING_DOWN:
+        reset();
+        break;
+      default:
         state = SETTING_TIMER;
         countUp();      
-      }
-      break;
-    default:
-      reset();
-      break;
-  }  
+        break;
+    }  
+  }
 }
 
 void longPressUp() {
 }
 
 void longPressHold() {
-  switch (state) {
-    case ZERO:
-      if (brightness > 0) {
-        if (brightness == max) {
-          setNightBrightness(minVisible);
-        } else {
-          setNightBrightness(brightness+1);
-        }        
-      }
-      break;
-  }  
+  if (brightness > 0) {
+    if (brightness == max) {
+      setNightBrightness(minVisible);
+    } else {
+      setNightBrightness(brightness+1);
+    }        
+  }
 }
 
 void beenAWhileSinceButtonPressed() {
   switch (state) {
     case SETTING_TIMER:
       state = COUNTING_DOWN;
+      scheduleWakeUp(countToStart);
       showCountdown(0);
       break;
   }
 }
 
 // helpers
+
+void scheduleWakeUp(int count) {
+  wakeUpTime = millis() + (countStepMs * count);
+}
 
 void setNightBrightness(int b) {
   nightBrightness = b;
@@ -180,7 +186,6 @@ void countUp() {
   if (countToStart <= maxCount) {
     setCountdown(countToStart+1);
   }
-  scheduleCountdown();
 }
 
 void fadeBrightness(int target) {
@@ -201,20 +206,6 @@ void setBrightness(int b) {
   brightness = b;
   int b2 = (b * b) / max;
   analogWrite(ledPin, b2);
-}
-
-void countdown() {
-  countToStart--;
-  if (debugMode) {
-    beep();
-  }
-  if (countToStart > 0) {
-    scheduleCountdown();
-  }
-}
-
-void scheduleCountdown() {
-  nextStep = millis() + countStepMs; 
 }
 
 void brighten() {
