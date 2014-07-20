@@ -11,7 +11,7 @@ int maxCount = 8;
 int indicatorPins[] = {3,4,5,6,7,8,9,10};
 int countToStart = 0;
 int settingTimer = false;
-unsigned long countStepMs = debugMode ? 10000 : 3600000;
+unsigned long countStepMs = debugMode ? 1000 : 3600000;
 unsigned long riseStepMs = debugMode ? 1000 : 6000;
 unsigned long resetMs = 1000;
 unsigned long nextStep = 0;
@@ -52,16 +52,12 @@ void loop() {
     beenAWhileSinceButtonPressed();
   }
   
-  if ((!zero) && millis() > nextStep) {
+  if ((!zero && !settingTimer) && millis() > nextStep) {
     if (countToStart > 0) {
       countdown();
     } else if (brightness < max) {
       brighten();
     }
-  }
-  
-  if (settingTimer) {
-    blinkLeds();
   }
 }
 
@@ -104,7 +100,7 @@ void longPressHold() {
 
 void beenAWhileSinceButtonPressed() {
   settingTimer = false;
-  showCountdown(countToStart);
+  showCountdown(0);
 }
 
 void setNightBrightness(int b) {
@@ -119,31 +115,26 @@ void showDimLights() {
 void reset() {
   zero = true;
   settingTimer = false; 
-  showCountdown(0);
+  setCountdown(0);
   setBrightness(0);
 }
 
-void showCountdown(int count) {
+void setCountdown(int count) {
   countToStart = count;
+  showCountdown(count);
+}
+
+void showCountdown(int count) {
   for (int i = 0; i < maxCount; i++) {
     digitalWrite(indicatorPins[i], (count > i) ? HIGH : LOW);
   }
-}
-
-void blinkLeds() {
-  int on = ((millis() / 500) % 3 > 0);
-  
-  for (int i = 0; i < maxCount; i++) {
-    digitalWrite(indicatorPins[i], ((i == countToStart -1) ? on : (countToStart > i)) ? HIGH : LOW);
-  }
-
 }
 
 void countUp() {
   zero = false;
   setBrightness(0);
   if (countToStart <= maxCount) {
-    showCountdown(countToStart+1);
+    setCountdown(countToStart+1);
   }
   scheduleCountdown();
 }
@@ -169,7 +160,7 @@ void setBrightness(int b) {
 }
 
 void countdown() {
-  showCountdown(countToStart-1);
+  countToStart--;
   if (debugMode) {
     beep();
   }
