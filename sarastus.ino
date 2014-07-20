@@ -1,22 +1,32 @@
 int debugMode = false;
+
+// pins
 int beepPin = 13;
 int ledPin = 11;
 int buttonPin = 2;
+int indicatorPins[] = {3,4,5,6,7,8,9,10};
+
+// brightness
 int brightness = 0;
 int min = 0;
 int minVisible = 16;
 int max = 255;
 int nightBrightness = max / 10;
+
+// timing state
 int maxCount = 8;
-int indicatorPins[] = {3,4,5,6,7,8,9,10};
 int countToStart = 0;
-int settingTimer = false;
 unsigned long countStepMs = debugMode ? 1000 : 3600000;
 unsigned long riseStepMs = debugMode ? 1000 : 6000;
 unsigned long resetMs = 1000;
 unsigned long nextStep = 0;
-unsigned long previousPress = 0;
+
+// app state
+int settingTimer = false;
 int zero = true;
+
+// button housekeeping
+unsigned long previousPress = 0;
 
 void setup() {
   pinMode(buttonPin, INPUT);
@@ -28,6 +38,11 @@ void setup() {
 }
 
 void loop() {  
+  checkButtonState();
+  advanceAppState();
+}
+
+void checkButtonState() {
   int buttonPressed = (digitalRead(buttonPin) == LOW);
   if (buttonPressed) { 
     previousPress = millis();
@@ -51,7 +66,9 @@ void loop() {
     previousPress = 0;
     beenAWhileSinceButtonPressed();
   }
-  
+}
+
+void advanceAppState() {
   if ((!zero && !settingTimer) && millis() > nextStep) {
     if (countToStart > 0) {
       countdown();
