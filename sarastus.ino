@@ -1,29 +1,33 @@
-int debugMode = false;
+const int debugMode = false;
 
 // pins
-int beepPin = 13;
-int ledPin = 11;
-int buttonPin = 2;
-int indicatorPins[] = {3,4,5,6,7,8,9,10};
+const int beepPin = 13;
+const int ledPin = 11;
+const int buttonPin = 2;
+const int indicatorPins[] = {3,4,5,6,7,8,9,10};
 
 // brightness
 int brightness = 0;
-int min = 0;
-int minVisible = 16;
-int max = 255;
+const int min = 0;
+const int minVisible = 16;
+const int max = 255;
 int nightBrightness = max / 10;
 
 // timing state
-int maxCount = 8;
+const int maxCount = 8;
 int countToStart = 0;
-unsigned long countStepMs = debugMode ? 1000 : 3600000;
-unsigned long riseStepMs = debugMode ? 1000 : 6000;
-unsigned long resetMs = 1000;
+const unsigned long countStepMs = debugMode ? 1000 : 3600000;
+const unsigned long riseStepMs = debugMode ? 1000 : 6000;
+const unsigned long resetMs = 1000;
 unsigned long nextStep = 0;
 
 // app state
-int settingTimer = false;
-int zero = true;
+const int ZERO = 0;
+const int COUNTING_DOWN = 1;
+const int BRIGHTENING = 2;
+const int SETTING_TIMER = 3;
+
+int state = ZERO;
 
 // button housekeeping
 unsigned long previousPress = 0;
@@ -69,56 +73,81 @@ void checkButtonState() {
 }
 
 void advanceAppState() {
-  if ((!zero && !settingTimer) && millis() > nextStep) {
-    if (countToStart > 0) {
-      countdown();
-    } else if (brightness < max) {
-      brighten();
-    }
+  switch (state) {
+    case COUNTING_DOWN:
+      if (millis() > nextStep) {
+        countdown();
+      }
+      break;
+    case BRIGHTENING:
+      if (millis() > nextStep) {
+        brighten();
+      }
+      break;
   }
 }
 
+// UI handlers
+
 void shortPress() {
-  if (settingTimer) {
-    countUp();
-  } else if (zero || (countToStart > 0)) { // normal operation, also during timer
-    if (brightness == 0) {
-      showDimLights();
-    } else {
-      fadeBrightness(0);
-    }
-  } else { // brightening
-    reset();
+  switch (state) {
+    case SETTING_TIMER:
+      countUp();
+      break;
+    case BRIGHTENING:
+      reset();
+      break;
+    default:
+      if (brightness == 0) {
+        showDimLights();
+      } else {
+        fadeBrightness(0);
+      }
+      break;
   }
 }
 
 void longPress() {
-  if (!zero) {
-    reset();
-  } else if (brightness == 0) {
-    zero = false;
-    settingTimer = true;
-    countUp();      
-  }
+  switch (state) {
+    case ZERO:
+      if (brightness == 0) {
+        state = SETTING_TIMER;
+        countUp();      
+      }
+      break;
+    default:
+      reset();
+      break;
+  }  
 }
 
 void longPressUp() {
 }
 
 void longPressHold() {
-  if (zero && brightness > 0) {
-    if (brightness == max) {
-      setNightBrightness(minVisible);
-    } else {
-      setNightBrightness(brightness+1);
-    }
-  }
+  switch (state) {
+    case ZERO:
+      if (brightness > 0) {
+        if (brightness == max) {
+          setNightBrightness(minVisible);
+        } else {
+          setNightBrightness(brightness+1);
+        }        
+      }
+      break;
+  }  
 }
 
 void beenAWhileSinceButtonPressed() {
-  settingTimer = false;
-  showCountdown(0);
+  switch (state) {
+    case SETTING_TIMER:
+      state = COUNTING_DOWN;
+      showCountdown(0);
+      break;
+  }
 }
+
+// helpers
 
 void setNightBrightness(int b) {
   nightBrightness = b;
@@ -130,8 +159,7 @@ void showDimLights() {
 }
 
 void reset() {
-  zero = true;
-  settingTimer = false; 
+  state = ZERO;
   setCountdown(0);
   setBrightness(0);
 }
@@ -148,7 +176,6 @@ void showCountdown(int count) {
 }
 
 void countUp() {
-  zero = false;
   setBrightness(0);
   if (countToStart <= maxCount) {
     setCountdown(countToStart+1);
@@ -191,8 +218,10 @@ void scheduleCountdown() {
 }
 
 void brighten() {
-  setBrightness((brightness >= minVisible) ? (brightness + 1) : (minVisible));
-  nextStep = millis() + riseStepMs;
+  if (brightness < max) {
+    setBrightness((brightness >= minVisible) ? (brightness + 1) : (minVisible));
+    nextStep = millis() + riseStepMs;
+  }
 }
 
 void beep() {
