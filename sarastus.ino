@@ -116,10 +116,16 @@ void longPress() {
   } else {
     switch (state) {
       case COUNTING_DOWN:
-        reset();
+        resetTimer();
+        break;
+      case SETTING_TIMER:
+        state = ZERO;
+        showCountdown(0);
+        setBrightness(0);  
         break;
       default:
         state = SETTING_TIMER;
+        countToStart = 0;
         countUp();      
         break;
     }  
@@ -143,8 +149,10 @@ void beenAWhileSinceButtonPressed() {
   switch (state) {
     case SETTING_TIMER:
       state = COUNTING_DOWN;
-      scheduleWakeUp(countToStart);
       showCountdown(0);
+      lowBeep();
+      highBeep();
+      scheduleWakeUp(countToStart);
       break;
   }
 }
@@ -164,10 +172,15 @@ void showDimLights() {
   fadeBrightness(nightBrightness);
 }
 
-void reset() {
+void resetTimer() {
+  for (int i = maxCount - 1; i >= 0; i--) {
+    setCountdown(i);
+    delay(100);
+  }
+  highBeep();
+  lowBeep();
   state = ZERO;
-  setCountdown(0);
-  setBrightness(0);
+  setBrightness(0);  
 }
 
 void setCountdown(int count) {
@@ -215,11 +228,19 @@ void brighten() {
   }
 }
 
-void beep() {
-  for (int i = 0; i < 100; i++) {
+void lowBeep() {
+  beep(50, 2);
+}
+
+void highBeep() {
+  beep(100, 1);
+}
+
+void beep(int c, int d) {
+  for (int i = 0; i < c; i++) {
     digitalWrite(beepPin, HIGH);
-    delay(1);
+    delay(d);
     digitalWrite(beepPin, LOW);
-    delay(1);  
+    delay(d);  
   }
 }
