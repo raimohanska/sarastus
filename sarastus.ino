@@ -5,6 +5,7 @@ const int beepPin = 13;
 const int ledPin = 11;
 const int buttonPin = 2;
 const int indicatorPins[] = {3,4,5,6,7,8,9,10};
+const int indicatorPinCount = 8;
 
 // brightness
 int brightness = 0;
@@ -14,7 +15,7 @@ const int max = 255;
 int nightBrightness = max / 10;
 
 // timing state
-const int maxCount = 8;
+const int maxCount = 20;
 int countToStart = 0;
 unsigned long wakeUpTime = 0;
 const unsigned long countStepMs = debugMode ? 1000 : 3600000;
@@ -37,7 +38,7 @@ void setup() {
   pinMode(buttonPin, INPUT);
   pinMode(beepPin, OUTPUT);
   pinMode(ledPin, OUTPUT);
-  for (int i = 0; i < maxCount; i++) {
+  for (int i = 0; i < indicatorPinCount; i++) {
     pinMode(indicatorPins[i], OUTPUT);
   }
 }
@@ -173,7 +174,7 @@ void showDimLights() {
 }
 
 void resetTimer() {
-  for (int i = maxCount - 1; i >= 0; i--) {
+  for (int i = indicatorPinCount - 1; i >= 0; i--) {
     setCountdown(i);
     delay(100);
   }
@@ -189,7 +190,7 @@ void setCountdown(int count) {
 }
 
 void showCountdown(int count) {
-  for (int i = 0; i < maxCount; i++) {
+  for (int i = 0; i < indicatorPinCount; i++) {
     digitalWrite(indicatorPins[i], (count > i) ? HIGH : LOW);
   }
 }
