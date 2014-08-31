@@ -1,11 +1,14 @@
+#include <TM1637Display.h>
+
 const int debugMode = false;
+
+
+TM1637Display dd(3,4);
 
 // pins
 const int beepPin = 13;
 const int ledPin = 11;
 const int buttonPin = 2;
-const int indicatorPins[] = {3,4,5,6,7,8,9,10};
-const int indicatorPinCount = 8;
 
 // brightness
 int brightness = 0;
@@ -38,9 +41,7 @@ void setup() {
   pinMode(buttonPin, INPUT);
   pinMode(beepPin, OUTPUT);
   pinMode(ledPin, OUTPUT);
-  for (int i = 0; i < indicatorPinCount; i++) {
-    pinMode(indicatorPins[i], OUTPUT);
-  }
+  dd.setBrightness(0);
 }
 
 void loop() {  
@@ -126,6 +127,7 @@ void longPress() {
         break;
       default:
         state = SETTING_TIMER;
+        highBeep();
         countToStart = 0;
         countUp();      
         break;
@@ -174,10 +176,6 @@ void showDimLights() {
 }
 
 void resetTimer() {
-  for (int i = indicatorPinCount - 1; i >= 0; i--) {
-    setCountdown(i);
-    delay(100);
-  }
   highBeep();
   lowBeep();
   state = ZERO;
@@ -190,9 +188,12 @@ void setCountdown(int count) {
 }
 
 void showCountdown(int count) {
-  for (int i = 0; i < indicatorPinCount; i++) {
-    digitalWrite(indicatorPins[i], (count > i) ? HIGH : LOW);
+  if (count > 0) {
+    dd.setBrightness(8);
+  } else {
+    dd.setBrightness(0);
   }
+  dd.showNumberDec(count, false, 4, 0);
 }
 
 void countUp() {
