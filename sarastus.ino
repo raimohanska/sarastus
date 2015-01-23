@@ -29,6 +29,10 @@ const unsigned long riseStepMs = debugMode ? 1000 : 6000;
 const unsigned long resetMs = 1000;
 unsigned long nextStep = 0;
 
+// brightness adjustment
+
+int adjustDir = -1;
+
 // app state
 const int ZERO = 0;
 const int COUNTING_DOWN = 1;
@@ -119,6 +123,7 @@ void shortPress() {
 void longPress() {
   if (brightness > 0) {
      // setting brightness
+     adjustDir = -adjustDir;
   } else {
     switch (state) {
       case SETTING_TIMER:
@@ -143,10 +148,12 @@ void longPressUp() {
 
 void longPressHold() {
   if (brightness > 0) {
-    if (brightness == max) {
+    // setting brightness
+    setNightBrightness(brightness+adjustDir);
+    if (brightness > max) {
+      setNightBrightness(max);
+    } else if (brightness < minVisible {
       setNightBrightness(minVisible);
-    } else {
-      setNightBrightness(brightness+1);
     }        
   }
 }
