@@ -23,7 +23,7 @@ int nightBrightness = max / 10;
 // timing state
 unsigned long secsToStart = 0;
 unsigned long wakeUpTime = 0;
-unsigned long hourMs = 3600 * 1000;
+unsigned long hourMs = 3600000;
 const unsigned long countStepSecs = debugMode ? 1 : 900;
 const unsigned long riseStepMs = debugMode ? 1000 : 6000;
 const unsigned long resetMs = 1000;
@@ -88,7 +88,7 @@ void advanceAppState() {
     case COUNTING_DOWN:
       if (hasPassed(wakeUpTime)) {
         state = BRIGHTENING;
-        wakeUpTime += (hourMs * ((unsigned long)24));
+        wakeUpTime += (24 * hourMs);
       }
       break;
     case BRIGHTENING:
