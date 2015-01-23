@@ -131,8 +131,8 @@ void longPress() {
         break;
       default:
         state = SETTING_TIMER;
-        highBeep();
         if (secsToStart == 0) {
+          highBeep();
           countUp();      
         } else {
           secsToStart = (wakeUpTime - millis()) / 1000;
@@ -162,19 +162,17 @@ void beenAWhileSinceButtonPressed() {
   switch (state) {
     case SETTING_TIMER:
       state = COUNTING_DOWN;
-      lowBeep();
-      highBeep();
+      if (wakeUpTime == 0) {        
+        lowBeep();
+        highBeep();
+      }
       hideCountdown();
-      scheduleWakeUp();
+      wakeUpTime = millis() + (secsToStart * 1000);
       break;
   }
 }
 
 // helpers
-
-void scheduleWakeUp() {
-  wakeUpTime = millis() + (secsToStart * 1000);
-}
 
 void setNightBrightness(int b) {
   nightBrightness = b;
@@ -190,6 +188,7 @@ void resetTimer() {
   lowBeep();
   state = ZERO;
   secsToStart = 0;
+  wakeUpTime = 0;
   hideCountdown();
 }
 
