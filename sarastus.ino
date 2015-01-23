@@ -37,7 +37,8 @@ int adjustDir = -1;
 const int ZERO = 0;
 const int COUNTING_DOWN = 1;
 const int BRIGHTENING = 2;
-const int SETTING_TIMER = 3;
+const int SHOWING_TIMER = 3;
+const int SETTING_TIMER = 4;
 
 int state = ZERO;
 
@@ -66,18 +67,21 @@ void checkButtonState() {
       if (!isLongPress && (hasPassed(previousPress + resetMs))) {
         longPress();
         isLongPress = true;
-      } else if (isLongPress) {
+      } 
+      else if (isLongPress) {
         longPressHold();
       }
       delay(10);
     }
     if (!isLongPress) {
       shortPress();
-    } else {
+    } 
+    else {
       longPressUp();
     }
     delay(10);
-  } else if ((previousPress > 0) && (hasPassed(previousPress + 5000))) {
+  } 
+  else if ((previousPress > 0) && (hasPassed(previousPress + 5000))) {
     previousPress = 0;
     beenAWhileSinceButtonPressed();
   }
@@ -85,17 +89,22 @@ void checkButtonState() {
 
 void advanceAppState() {
   switch (state) {
-    case COUNTING_DOWN:
-      if (hasPassed(wakeUpTime)) {
-        state = BRIGHTENING;
-        wakeUpTime += (24 * hourMs);
-      }
-      break;
-    case BRIGHTENING:
-      if (hasPassed(nextStep)) {
-        brighten();
-      }
-      break;
+  case SHOWING_TIMER:      
+    if (!hasPassed(wakeUpTime)) {
+      showTimer();
+    }
+  case COUNTING_DOWN:
+    if (hasPassed(wakeUpTime)) {
+      hideCountdown();
+      state = BRIGHTENING;
+      wakeUpTime += (24 * hourMs);
+    }
+    break;
+  case BRIGHTENING:
+    if (hasPassed(nextStep)) {
+      brighten();
+    }
+    break;
   }
 }
 
@@ -114,44 +123,54 @@ int hasPassed(unsigned long time) {
 
 void shortPress() {
   switch (state) {
-    case SETTING_TIMER:
-      countUp();
-      break;
-    case BRIGHTENING:
+  case SHOWING_TIMER:
+    state = SETTING_TIMER;
+  case SETTING_TIMER:
+    countUp();
+    break;
+  case BRIGHTENING:
+    fadeBrightness(0);
+    state = COUNTING_DOWN;
+    break;
+  default:
+    if (brightness == 0) {
+      showDimLights();
+    } 
+    else {
       fadeBrightness(0);
-      state = COUNTING_DOWN;
-      break;
-    default:
-      if (brightness == 0) {
-        showDimLights();
-      } else {
-        fadeBrightness(0);
-      }
-      break;
+    }
+    break;
   }
 }
 
 void longPress() {
   if (brightness > 0) {
-     // setting brightness
-     adjustDir = -adjustDir;
-  } else {
+    // setting brightness
+    adjustDir = -adjustDir;
+  } 
+  else {
     switch (state) {
-      case SETTING_TIMER:
-        resetTimer();
-        break;
-      default:
-        state = SETTING_TIMER;
-        if (secsToStart == 0) {
-          highBeep();
-          countUp();      
-        } else {
-          secsToStart = (wakeUpTime - millis()) / 1000;
-        }
-        showCountdown();
-        break;
+    case SETTING_TIMER:
+    case SHOWING_TIMER:
+      resetTimer();
+      break;
+    case ZERO:
+      state = SETTING_TIMER;
+      highBeep();
+      countUp();      
+      showSecsToStart();
+      break;
+    default:
+      showTimer();
+      break;
     }  
   }
+}
+
+void showTimer() {
+  secsToStart = (wakeUpTime - millis()) / 1000;
+  state = SHOWING_TIMER;
+  showSecsToStart();
 }
 
 void longPressUp() {
@@ -161,10 +180,11 @@ void longPressHold() {
   if (brightness > 0) {
     // setting brightness
     brightness += adjustDir;
-    
+
     if (brightness > max) {
       brightness = max;
-    } else if (brightness < minVisible) {
+    } 
+    else if (brightness < minVisible) {
       brightness = minVisible;
     }
 
@@ -174,6 +194,10 @@ void longPressHold() {
 
 void beenAWhileSinceButtonPressed() {
   switch (state) {
+    case SHOWING_TIMER:
+      state = COUNTING_DOWN;
+      hideCountdown();
+      break;    
     case SETTING_TIMER:
       state = COUNTING_DOWN;
       if (wakeUpTime == 0) {        
@@ -199,7 +223,7 @@ void resetTimer() {
   hideCountdown();
 }
 
-void showCountdown() {
+void showSecsToStart() {
   dd.setBrightness(8);
 
   unsigned long hours = secsToStart / 3600;
@@ -207,7 +231,8 @@ void showCountdown() {
 
   if (hours > 0 || minutes > 0) {  
     dd.showNumberDec(hours * 100 + minutes, false, 4, 0);
-  } else {
+  } 
+  else {
     unsigned long secs = (secsToStart % 60);
     dd.showNumberDec(secs, false, 4, 0);
   }
@@ -221,7 +246,7 @@ void hideCountdown() {
 void countUp() {
   secsToStart += countStepSecs;
   secsToStart -= (secsToStart % countStepSecs);
-  showCountdown();
+  showSecsToStart();
 }
 
 void fadeBrightness(int target) {
@@ -230,7 +255,7 @@ void fadeBrightness(int target) {
   int fadeSteps = abs(target - start);
   int fadeDelay = fadeTime / fadeSteps;
   int fadeStep = (target - start) / fadeSteps;
-  
+
   for (int i = 0; i < fadeSteps; i++) {
     setBrightness(map(i, 0, fadeSteps - 1, start, target));
     delay(fadeDelay);
@@ -268,3 +293,4 @@ void beep(int c, int d) {
     delay(d);  
   }
 }
+
