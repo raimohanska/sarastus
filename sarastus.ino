@@ -1,6 +1,6 @@
 #include <TM1637Display.h>
 
-const int silent = true;
+const int silent = false;
 const int debugMode = false;
 
 // pins
@@ -152,7 +152,7 @@ void longPressHold() {
     setNightBrightness(brightness+adjustDir);
     if (brightness > max) {
       setNightBrightness(max);
-    } else if (brightness < minVisible {
+    } else if (brightness < minVisible) {
       setNightBrightness(minVisible);
     }        
   }
