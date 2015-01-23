@@ -2,13 +2,15 @@
 
 const int debugMode = false;
 
-
-TM1637Display dd(3,4);
-
 // pins
 const int beepPin = 13;
 const int ledPin = 11;
 const int buttonPin = 2;
+const int dispClockPin = 3;
+const int dispDioPin = 4;
+
+TM1637Display dd(dispClockPin, dispDioPin);
+
 
 // brightness
 int brightness = 0;
@@ -42,6 +44,8 @@ void setup() {
   pinMode(beepPin, OUTPUT);
   pinMode(ledPin, OUTPUT);
   dd.setBrightness(0);
+  dd.setColon(true);
+  dd.showNumberDec(countToStart*100, false, 4, 0);
 }
 
 void loop() {  
@@ -117,19 +121,16 @@ void longPress() {
      // setting brightness
   } else {
     switch (state) {
-      case COUNTING_DOWN:
-        resetTimer();
-        break;
       case SETTING_TIMER:
-        state = ZERO;
-        showCountdown(0);
-        setBrightness(0);  
+        resetTimer();
         break;
       default:
         state = SETTING_TIMER;
         highBeep();
-        countToStart = 0;
-        countUp();      
+        if (countToStart == 0) {
+          countUp();      
+        }
+        showCountdown();
         break;
     }  
   }
@@ -152,9 +153,9 @@ void beenAWhileSinceButtonPressed() {
   switch (state) {
     case SETTING_TIMER:
       state = COUNTING_DOWN;
-      showCountdown(0);
       lowBeep();
       highBeep();
+      hideCountdown();
       scheduleWakeUp(countToStart);
       break;
   }
@@ -179,21 +180,23 @@ void resetTimer() {
   highBeep();
   lowBeep();
   state = ZERO;
-  setBrightness(0);  
+  countToStart = 0;
+  hideCountdown();
 }
 
 void setCountdown(int count) {
   countToStart = count;
-  showCountdown(count);
+  showCountdown();
 }
 
-void showCountdown(int count) {
-  if (count > 0) {
-    dd.setBrightness(8);
-  } else {
-    dd.setBrightness(0);
-  }
-  dd.showNumberDec(count, false, 4, 0);
+void showCountdown() {
+  dd.setBrightness(8);
+  dd.showNumberDec(countToStart*100, false, 4, 0);
+}
+
+void hideCountdown() {
+  dd.setBrightness(0);
+  dd.showNumberDec(countToStart*100, false, 4, 0); // required for brightness to take effect
 }
 
 void countUp() {
