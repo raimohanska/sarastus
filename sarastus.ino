@@ -99,8 +99,15 @@ void advanceAppState() {
   }
 }
 
+const unsigned long dayMs = 86400000;
+
 int hasPassed(unsigned long time) {
-  return millis() > time;
+  unsigned long now = millis();
+  if (now > dayMs) {    
+    now -= dayMs;
+    time -= dayMs;
+  }
+  return now > time;
 }
 
 // UI handlers
