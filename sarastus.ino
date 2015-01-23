@@ -149,12 +149,15 @@ void longPressUp() {
 void longPressHold() {
   if (brightness > 0) {
     // setting brightness
-    setNightBrightness(brightness+adjustDir);
+    brightness += adjustDir;
+    
     if (brightness > max) {
-      setNightBrightness(max);
+      brightness = max;
     } else if (brightness < minVisible) {
-      setNightBrightness(minVisible);
-    }        
+      brightness = minVisible;
+    }
+
+    setBrightness(brightness);    
   }
 }
 
@@ -170,13 +173,6 @@ void beenAWhileSinceButtonPressed() {
       wakeUpTime = millis() + (secsToStart * 1000);
       break;
   }
-}
-
-// helpers
-
-void setNightBrightness(int b) {
-  nightBrightness = b;
-  setBrightness(b);
 }
 
 void showDimLights() {
