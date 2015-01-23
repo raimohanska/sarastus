@@ -63,7 +63,7 @@ void checkButtonState() {
     previousPress = millis();
     int isLongPress = false;
     while(digitalRead(buttonPin) == LOW) {
-      if (!isLongPress && (millis() > previousPress + resetMs)) {
+      if (!isLongPress && (hasPassed(previousPress + resetMs))) {
         longPress();
         isLongPress = true;
       } else if (isLongPress) {
@@ -77,7 +77,7 @@ void checkButtonState() {
       longPressUp();
     }
     delay(10);
-  } else if ((previousPress > 0) && (millis() - previousPress > 5000)) {
+  } else if ((previousPress > 0) && (hasPassed(previousPress + 5000))) {
     previousPress = 0;
     beenAWhileSinceButtonPressed();
   }
@@ -86,17 +86,21 @@ void checkButtonState() {
 void advanceAppState() {
   switch (state) {
     case COUNTING_DOWN:
-      if (millis() >= wakeUpTime) {
+      if (hasPassed(wakeUpTime)) {
         state = BRIGHTENING;
-        wakeUpTime += (hourMs * 24);
+        wakeUpTime += (hourMs * ((unsigned long)24));
       }
       break;
     case BRIGHTENING:
-      if (millis() > nextStep) {
+      if (hasPassed(nextStep)) {
         brighten();
       }
       break;
   }
+}
+
+int hasPassed(unsigned long time) {
+  return millis() > time;
 }
 
 // UI handlers
