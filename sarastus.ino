@@ -23,7 +23,8 @@ int nightBrightness = max / 10;
 const int maxCount = 20;
 int countToStart = 0;
 unsigned long wakeUpTime = 0;
-const unsigned long countStepMs = debugMode ? 1000 : 3600000;
+unsigned long hourMs = 3600 * 1000;
+const unsigned long countStepMs = debugMode ? 1000 : hourMs;
 const unsigned long riseStepMs = debugMode ? 1000 : 6000;
 const unsigned long resetMs = 1000;
 unsigned long nextStep = 0;
@@ -84,7 +85,7 @@ void advanceAppState() {
     case COUNTING_DOWN:
       if (millis() >= wakeUpTime) {
         state = BRIGHTENING;
-        wakeUpTime += (countStepMs * 24);
+        wakeUpTime += (hourMs * 24);
       }
       break;
     case BRIGHTENING:
@@ -191,7 +192,11 @@ void setCountdown(int count) {
 
 void showCountdown() {
   dd.setBrightness(8);
-  dd.showNumberDec(countToStart*100, false, 4, 0);
+  unsigned long msToStart = (countStepMs * countToStart);
+  unsigned long hours = msToStart / hourMs;
+  unsigned long minutes = msToStart % hourMs;
+  
+  dd.showNumberDec(((int)hours)*100, false, 4, 0);
 }
 
 void hideCountdown() {
