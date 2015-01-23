@@ -1,5 +1,6 @@
 #include <TM1637Display.h>
 
+const int silent = true;
 const int debugMode = false;
 
 // pins
@@ -20,11 +21,10 @@ const int max = 255;
 int nightBrightness = max / 10;
 
 // timing state
-const int maxCount = 20;
-int countToStart = 0;
+unsigned long secsToStart = 0;
 unsigned long wakeUpTime = 0;
 unsigned long hourMs = 3600 * 1000;
-const unsigned long countStepMs = debugMode ? 1000 : hourMs;
+const unsigned long countStepSecs = debugMode ? 1 : 900;
 const unsigned long riseStepMs = debugMode ? 1000 : 6000;
 const unsigned long resetMs = 1000;
 unsigned long nextStep = 0;
@@ -44,9 +44,8 @@ void setup() {
   pinMode(buttonPin, INPUT);
   pinMode(beepPin, OUTPUT);
   pinMode(ledPin, OUTPUT);
-  dd.setBrightness(0);
   dd.setColon(true);
-  dd.showNumberDec(countToStart*100, false, 4, 0);
+  hideCountdown();
 }
 
 void loop() {  
@@ -128,8 +127,10 @@ void longPress() {
       default:
         state = SETTING_TIMER;
         highBeep();
-        if (countToStart == 0) {
+        if (secsToStart == 0) {
           countUp();      
+        } else {
+          secsToStart = (wakeUpTime - millis()) / 1000;
         }
         showCountdown();
         break;
@@ -157,15 +158,15 @@ void beenAWhileSinceButtonPressed() {
       lowBeep();
       highBeep();
       hideCountdown();
-      scheduleWakeUp(countToStart);
+      scheduleWakeUp();
       break;
   }
 }
 
 // helpers
 
-void scheduleWakeUp(int count) {
-  wakeUpTime = millis() + (countStepMs * count);
+void scheduleWakeUp() {
+  wakeUpTime = millis() + (secsToStart * 1000);
 }
 
 void setNightBrightness(int b) {
@@ -181,34 +182,33 @@ void resetTimer() {
   highBeep();
   lowBeep();
   state = ZERO;
-  countToStart = 0;
+  secsToStart = 0;
   hideCountdown();
-}
-
-void setCountdown(int count) {
-  countToStart = count;
-  showCountdown();
 }
 
 void showCountdown() {
   dd.setBrightness(8);
-  unsigned long msToStart = (countStepMs * countToStart);
-  unsigned long hours = msToStart / hourMs;
-  unsigned long minutes = msToStart % hourMs;
-  
-  dd.showNumberDec(((int)hours)*100, false, 4, 0);
+
+  unsigned long hours = secsToStart / 3600;
+  unsigned long minutes = (secsToStart % 3600) / 60;
+
+  if (hours > 0 || minutes > 0) {  
+    dd.showNumberDec(hours * 100 + minutes, false, 4, 0);
+  } else {
+    unsigned long secs = (secsToStart % 60);
+    dd.showNumberDec(secs, false, 4, 0);
+  }
 }
 
 void hideCountdown() {
   dd.setBrightness(0);
-  dd.showNumberDec(countToStart*100, false, 4, 0); // required for brightness to take effect
+  dd.showNumberDec(0, false, 4, 0); // required for brightness to take effect
 }
 
 void countUp() {
-  setBrightness(0);
-  if (countToStart <= maxCount) {
-    setCountdown(countToStart+1);
-  }
+  secsToStart += countStepSecs;
+  secsToStart -= (secsToStart % countStepSecs);
+  showCountdown();
 }
 
 void fadeBrightness(int target) {
@@ -247,6 +247,7 @@ void highBeep() {
 }
 
 void beep(int c, int d) {
+  if (silent) return;
   for (int i = 0; i < c; i++) {
     digitalWrite(beepPin, HIGH);
     delay(d);
